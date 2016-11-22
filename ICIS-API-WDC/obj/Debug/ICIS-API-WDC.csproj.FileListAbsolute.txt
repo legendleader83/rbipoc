@@ -1,0 +1,40 @@
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\csc.exe
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\Microsoft.Build.Tasks.CodeAnalysis.dll
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\Microsoft.CodeAnalysis.CSharp.dll
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\Microsoft.CodeAnalysis.dll
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\Microsoft.CodeAnalysis.VisualBasic.dll
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\Microsoft.CSharp.Core.targets
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\Microsoft.VisualBasic.Core.targets
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\System.Collections.Immutable.dll
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\System.Reflection.Metadata.dll
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\vbc.exe
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\VBCSCompiler.exe
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\VBCSCompiler.exe.config
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\ICIS-API-WDC.dll.config
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\ICIS-API-WDC.dll
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\ICIS-API-WDC.pdb
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\bin\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.xml
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\obj\Debug\ICIS-API-WDC.csprojResolveAssemblyReference.cache
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\obj\Debug\ICIS-API-WDC.dll
+c:\users\marinip\documents\visual studio 2015\Projects\ICIS-API-WDC\ICIS-API-WDC\obj\Debug\ICIS-API-WDC.pdb
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\csc.exe
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\Microsoft.Build.Tasks.CodeAnalysis.dll
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\Microsoft.CodeAnalysis.CSharp.dll
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\Microsoft.CodeAnalysis.dll
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\Microsoft.CodeAnalysis.VisualBasic.dll
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\Microsoft.CSharp.Core.targets
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\Microsoft.VisualBasic.Core.targets
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\System.Collections.Immutable.dll
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\System.Reflection.Metadata.dll
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\vbc.exe
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\VBCSCompiler.exe
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\roslyn\VBCSCompiler.exe.config
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\ICIS-API-WDC.dll.config
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\ICIS-API-WDC.dll
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\ICIS-API-WDC.pdb
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\bin\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.xml
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\obj\Debug\ICIS-API-WDC.csprojResolveAssemblyReference.cache
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\obj\Debug\ICIS-API-WDC.dll
+C:\inetpub\wwwroot\ICIS-API-WDC\ICIS-API-WDC\obj\Debug\ICIS-API-WDC.pdb

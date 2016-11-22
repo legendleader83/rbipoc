@@ -1,0 +1,357 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <title>ICIS Web Data Connector for Tableau by ICIS Technology</title>
+    
+    <link rel="stylesheet" href="jquery-ui/jquery-ui.min.css">
+
+    <script src="js/jquery-2.1.4.js" type="text/javascript"></script>
+    <script src="jquery-ui/jquery-ui.min.js"></script>
+    <script src="https://connectors.tableau.com/libs/tableauwdc-1.1.1.js" type="text/javascript"></script>
+    <script src="js/library.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            populateSeriesDropdown();
+
+            $("#fromDate").datepicker({ dateFormat: "yy-mm-dd" });
+            $("#toDate").datepicker({ dateFormat: "yy-mm-dd" });
+
+
+            //$("#series").click(function () {
+            //    //alert("Handler for .select() called.");
+            //    $("#console_web").html("Select Clicked");
+            //    //populateSeriesDropdown();
+            //});
+
+        });
+
+    (function () {
+            var myConnector = tableau.makeConnector();
+
+            myConnector.getColumnHeaders = function () {
+                var params = JSON.parse(tableau.connectionData);
+
+                // work in progress: need to determine column headers and types dynamically, from the last series-item in the selected series
+                //getSeriesItemHeaders(params.seriesId);
+
+                var fieldNames = ['series-order', 'assessment-low', 'assessment-high', 'mid', 'start-date', 'end-date', 'period-label'];
+                var fieldTypes = ['datetime', 'float', 'float', 'float', 'datetime', 'datetime', 'string'];
+                tableau.headersCallback(fieldNames, fieldTypes);
+            }
+
+            myConnector.getTableData = function (lastRecordToken) {
+                var params = JSON.parse(tableau.connectionData);
+                if (!lastRecordToken || lastRecordToken == "") {
+                    lastRecordToken = 0;
+                }
+                else {
+                    lastRecordToken = parseInt(lastRecordToken);
+                }
+
+                var seriesId = params.seriesId;
+                var fromDate = params.fromDate;
+                var toDate = params.toDate;
+                var requestTemplate = '\
+<request version="1.0" xmlns="http://iddn.icis.com/ns/search">\
+    <scope>\
+        <series>{0}</series>\
+    </scope>\
+    <constraints>\
+        <and>\
+          <compare field="c:series-order" op="ge" value="{1}"/>\
+           <compare field="c:series-order" op="le" value="{2}"/>\
+        </and>\
+    </constraints>\
+    <options>\
+        <first-result>{3}</first-result>\
+        <max-results>{4}</max-results>\
+        <order-by key="created-on" direction="ascending"/>\
+    </options>\
+    <view>\
+        <field>c:series-order</field>\
+        <field>*</field>\
+    </view>\
+</request>'
+
+                var request = requestTemplate.format(seriesId, fromDate, toDate, lastRecordToken + 1, 200);
+
+                var xhr = $.ajax({
+                    method: 'POST',
+                    url: baseUrl + "/search",
+                    headers: {
+                        "Authorization": "Basic " + btoa($('#username').val() + ":" + $('#password').val())
+                    },
+                    data: request,
+                    dataType: "xml",
+                    type: "POST",
+                    success: function (data) {
+                        
+                        if (data) {
+                            var results = getJXONTree(data);
+                            var feed = results["atom:feed"];
+                            dataToReturn = feed["atom:entry"].map(function (x) {
+                                var content = x["atom:content"];
+                                var price_range = content['s:price-range'];
+                                return {
+                                    'series-order': price_range['s:c_series-order'],
+                                    'assessment-low': price_range['s:assessment-low'].keyValue || price_range['s:assessment-low'], // different object in case of attribute
+                                    'assessment-high': price_range['s:assessment-high'].keyValue || price_range['s:assessment-high'],
+                                    'mid': price_range['s:mid'].keyValue || price_range['s:mid'],
+                                    'start-date': price_range['s:start-date'],
+                                    'end-date': price_range['s:end-date'],
+                                    'period-label': price_range['s:period-label'].keyValue || price_range['s:period-label']
+                                }
+                            })
+
+                            // pagination
+                            var selected = parseInt(feed['s:selected-count']);
+                            lastRecordToken = parseInt(feed['s:first-result']) + parseInt(feed['s:returned-count']) - 1;
+                            var hasMoreData = (lastRecordToken < selected);
+
+                            tableau.dataCallback(dataToReturn, lastRecordToken.toString(), hasMoreData);
+                        }
+                        else {
+                            tableau.abortWithError("Error fetching data for " + seriesId);
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        // If the connection fails, log the error and return an empty set.
+                        tableau.log("Connection error: " + xhr.responseText + "\n" + thrownError);
+                        tableau.abortWithError("Error while trying to connect to the ICIS API.");
+                    }
+                });
+
+            }
+
+            tableau.registerConnector(myConnector);
+        })();
+
+    var baseUrl = "https://api.icis.com/v1"
+
+    function letsgo() {
+
+        var params = {
+            seriesId: $('#series').val(),
+            fromDate: $('#fromDate').val(),
+            toDate: $('#toDate').val()
+        }
+
+        tableau.connectionName = "Series Items for " + series.value;
+        tableau.connectionData = JSON.stringify(params);
+        tableau.submit();
+    }
+
+    function fetchSeries(success) {
+        var searchRequest = '\
+<request version="1.0" xmlns="http://iddn.icis.com/ns/search">\
+	<scope>\
+		<type>series</type>\
+	</scope>\
+	<constraints>\
+		<or>\
+			<domain>petchem</domain>\
+			<domain>energy</domain>\
+		</or>\
+	</constraints>\
+    <options>\
+        <max-results>100</max-results>\
+        <order-by key="created-on" direction="ascending"/>\
+    </options>\
+	<view>\
+		<field>c:id</field>\
+		<field>f:name</field>\
+	</view>\
+</request>'
+
+
+        var series;
+        $.ajax({
+            method: 'POST',
+            url: baseUrl + "/search",
+            headers: {
+                "Authorization": "Basic " + btoa($('#username').val() + ":" + $('#password').val())
+            },
+            data: searchRequest,
+            dataType: "xml",
+            type: "POST",
+            success: function (data) {
+                
+                var results = getJXONTree(data);
+                
+                series = results["atom:feed"]["atom:entry"].map(function (x, i) {
+                    var content = x["atom:content"];
+                    var propName = Object.keys(content)[1]; // depends on the descriptor
+                    var entry = { id: content[propName]['s:c_id'] };
+                    
+                    if (content[propName]['s:name']) {
+                        entry.name = content[propName]['s:name'].keyValue;
+                    }
+                    else {
+                        entry.name = entry.id;
+                    }
+
+                    return entry;
+                })
+                success(series);
+                $("#console_web").html("Populate Series List Ctrl Success");
+            }
+            ,error: function (xhr, ajaxOptions, thrownError) {
+                $("#console_web").html("Populate Series List Ctrl Failure <br><br>" + xhr.status + "<br>" + thrownError);
+            }
+        });
+    }
+
+    function populateSeriesDropdown() {
+        fetchSeries(function (series) {
+            $('#series').empty();
+            $.each(series, function (i, entry) {
+                $('#series').append($('<option>').text(entry.name).attr('value', entry.id));
+            });
+        });
+    }
+
+    // not used yet
+    function getSeriesItemHeaders(seriesId) {
+
+        getLastSeriesItem(seriesId);
+
+        getDescriptor(seriesId, function (descriptor) {
+
+            console.log("Descriptor:" + descriptor);
+
+            var fieldNodes = document.evaluate("/entry/content/*[namespace-uri()='http://iddn.icis.com/ns/core' and local-name()='descriptor']/*[namespace-uri()='http://iddn.icis.com/ns/core' and local-name()='field']/@href", descriptor);
+
+            $.each(fieldNodes, function (i, field) {
+                console.log("i=" + i);
+            })
+            //getFields
+            //map
+        });
+    }
+
+    // work in progress
+    function analyseSeries() {
+        var seriesId = $('#series').val();
+
+        var requestTemplate = '\
+<request version="1.0" xmlns="http://iddn.icis.com/ns/search">\
+    <scope>\
+        <series>{0}</series>\
+    </scope>\
+    <options>\
+        <max-results>1</max-results>\
+        <order-by key="created-on" direction="descending"/>\
+    </options>\
+    <view>\
+        <field>c:descriptor</field>\
+    </view>\
+</request>'
+
+        var request = requestTemplate.format(seriesId);
+
+        var xhr = $.ajax({
+            method: 'POST',
+            url: baseUrl + "/search",
+            headers: {
+                "Authorization": "Basic " + btoa($('#username').val() + ":" + $('#password').val())
+            },
+            data: request,
+            dataType: "xml",
+            type: "POST",
+            success: function (data) {
+                        
+                if (data) {
+
+                    var xPathResult = document.evaluate("//*[namespace-uri()='http://iddn.icis.com/ns/search' and local-name()='c_descriptor']/@href", data);
+                    
+                    var fieldNode;
+                    while (fieldNode = xPathResult.iterateNext())
+                    {
+                        $("#console_web").append("<br>" + fieldNode.value);
+                    }
+
+                    var results = getJXONTree(data);
+                    var feed = results["atom:feed"];
+                    dataToReturn = feed.map(function (x) {
+                        var content = x["atom:content"];
+                        var price_range = content['s:price-range'];
+                        return {
+                            'series-order': price_range['s:c_series-order'],
+                            'assessment-low': price_range['s:assessment-low'].keyValue || price_range['s:assessment-low'], // different object in case of attribute
+                            'assessment-high': price_range['s:assessment-high'].keyValue || price_range['s:assessment-high'],
+                            'mid': price_range['s:mid'].keyValue || price_range['s:mid'],
+                            'start-date': price_range['s:start-date'],
+                            'end-date': price_range['s:end-date'],
+                            'period-label': price_range['s:period-label'].keyValue || price_range['s:period-label']
+                        }
+                    });
+
+
+                    $("#console_web").append("<br><br>analyseSeries Success <br><br>" + dataToReturn.series-order);
+                }
+            }
+            , error: function (xhr, ajaxOptions, thrownError) {
+                $("#console_web").append("analyseSeries Failure <br><br>" + xhr.status + "<br>" + thrownError);
+            }
+        });
+
+    }
+
+    // not used yet
+    function getDescriptor(id, success) {
+        var accessor = getAccessor(id);
+
+        $.ajax({
+            method: 'GET',
+            url: baseUrl + "/descriptors" + accessor,
+            headers: {
+                "Authorization": "Basic " + btoa($('#username').val() + ":" + $('#password').val())
+            },
+            dataType: "xml",
+            type: "GET",
+            success: function (data) {
+                //var descriptor = getJXONTree(data);
+                //success(descriptor);
+                success(data);
+            },
+            fail: function (err) {
+                alert(err);
+            }
+        });
+    }
+
+    function getAccessor(id) {
+        return id.replace("http://iddn.icis.com", "");
+    }
+
+    </script>
+</head>
+<body>
+
+    <div>
+        Username: <input id="username" type="text" value=""/> &nbsp; 
+        Password: <input id="password" type="password" value=""/> &nbsp;
+    </div>
+    <hr/>
+    <div>
+        Series: <select id="series"><option>Loading...        </option></select>
+        <br /> - (only working with the first item for now, and other series with items of the same descriptor)
+    </div>
+    <div>
+        From: <input type="text" id="fromDate" value="2015-01-01" /> &nbsp; 
+        To: <input type="text" id="toDate" value="2015-12-31" />
+    </div>
+    <div>
+        <input type="button" onclick="analyseSeries()" value="Let's go!" />
+    </div>
+    <hr/>
+    <textarea id="response" style="width: 90%; height: 300px"></textarea>
+    <p>Console</p>
+    <div id="console_web" name="console_web" style="border: 1px solid black;"></div>
+</body>
+</html>

@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>ICIS API - Search Playground</title>
+    <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+
+    <script type="text/javascript">
+
+        function postSearch() {
+            $.ajax({
+                method: 'POST',
+                url: "/api/v1/search",
+                data: $("textarea#search").val(),
+                dataType: "text",
+                type: "POST",
+                success: function (data) {
+
+                    $("textarea#response").val(data);
+                },
+                fail: function (err) {
+                    alert(err);
+                }
+            });
+        }
+
+    </script>
+
+    <style type="text/css">
+        textarea { width: 100% }
+    </style>
+</head>
+<body>
+    <form>
+        <textarea id="search" rows="20">&lt;request xmlns=&quot;http://iddn.icis.com/ns/search&quot;&gt;
+    &lt;scope&gt;
+        &lt;kind&gt;location&lt;/kind&gt;
+    &lt;/scope&gt;
+    &lt;options&gt;
+        &lt;max-results&gt;6&lt;/max-results&gt;
+        &lt;order-by key=&quot;location-name&quot; direction=&quot;ascending&quot; /&gt;
+    &lt;/options&gt;
+&lt;/request&gt;
+        </textarea><br />
+        <input id="post" type="button" onclick="postSearch()" value="POST to /search"/><br />
+        <textarea id="response" rows="20"></textarea><br />
+    </form>
+
+</body>
+</html>

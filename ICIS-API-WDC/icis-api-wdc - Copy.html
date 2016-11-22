@@ -1,0 +1,292 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <title>ICIS Web Data Connector for Tableau by ICIS Technology</title>
+
+    <script src="js/jquery-2.1.4.js" type="text/javascript"></script>
+    <script src="js/tableauwdc-1.1.0.js" type="text/javascript"></script>
+    <script src="js/library.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+ 
+        (function () {
+            var myConnector = tableau.makeConnector();
+
+            myConnector.getColumnHeaders = function () {
+                var fieldNames = ['series-order', 'assessment-low', 'assessment-high', 'mid', 'start-date', 'end-date', 'period-label'];
+                var fieldTypes = ['datetime', 'float', 'float', 'float', 'datetime', 'datetime', 'string'];
+                tableau.headersCallback(fieldNames, fieldTypes);
+            }
+
+            myConnector.getTableData = function (lastRecordToken) {
+                //var dataToReturn = [];
+                var lastRecordToken = 0; // use this for paginating results
+                var hasMoreData = false; // as above
+
+
+                var params = JSON.parse(tableau.connectionData);
+                var seriesId = params.seriesId;
+                var fromDate = params.fromDate;
+                var toDate = params.toDate;
+                var requestTemplate = '\
+<request version="1.0" xmlns="http://iddn.icis.com/ns/search">\
+    <scope>\
+        <series>{0}</series>\
+    </scope>\
+    <constraints>\
+        <and>\
+            <compare field="c:series-order" op="ge" value="{1}"/>\
+            <compare field="c:series-order" op="le" value="{2}"/>\
+        </and>\
+    </constraints>\
+    <view>\
+        <field>c:series-order</field>\
+        <field>*</field>\
+    </view>\
+</request>'
+
+                var request = requestTemplate.format(seriesId, fromDate, toDate);
+
+                var xhr = $.ajax({
+                    method: 'POST',
+                    url: baseUrl + "/search",
+                    headers: {
+                        "Authorization": "Basic " + btoa($('#username').val() + ":" + $('#password').val())
+                    },
+                    data: request,
+                    dataType: "xml",
+                    type: "POST",
+                    success: function (data) {
+                        
+                        if (data) {
+                            var results = getJXONTree(data);
+                            dataToReturn = results.feed.entry.map(function (x) {
+                                return {
+                                    'series-order': x.content['s:price-range']['s:c_series-order'],
+                                    'assessment-low': x.content['s:price-range']['s:assessment-low'].keyValue,
+                                    'assessment-high': x.content['s:price-range']['s:assessment-high'].keyValue,
+                                    'mid': x.content['s:price-range']['s:mid'].keyValue,
+                                    'start-date': x.content['s:price-range']['s:start-date'],
+                                    'end-date': x.content['s:price-range']['s:end-date'],
+                                    'period-label': x.content['s:price-range']['s:period-label'].keyValue
+                                }
+                            })
+
+                            tableau.dataCallback(dataToReturn, lastRecordToken, hasMoreData);
+                        }
+                        else {
+                            tableau.abortWithError("Error fetching data for " + seriesId);
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        // If the connection fails, log the error and return an empty set.
+                        tableau.log("Connection error: " + xhr.responseText + "\n" + thrownError);
+                        tableau.abortWithError("Error while trying to connecto to from the ICIS API.");
+                    }
+                });
+
+            }
+
+            tableau.registerConnector(myConnector);
+        })();
+
+     
+    var baseUrl = "https://api.icis.com/v1"
+    //var baseUrl = "http://localhost:8080/api/v1" // using node as stupid Tableau ignores the system proxy settings! None of this will be needed once CORS is enabled in the API.
+
+    function test() {
+        $.ajax({
+            method: 'POST',
+            url: baseUrl + "/search",
+            headers: {
+                "Authorization": "Basic " + btoa($('#username').val() + ":" + $('#password').val())
+            },
+                data: '<request version="1.0" xmlns="http://iddn.icis.com/ns/search" />', //$("textarea#search").val(),
+            dataType: "text",
+            type: "POST",
+            success: function (data) {
+
+                $("textarea#response").val(data);
+            },
+            fail: function (err) {
+                alert(err);
+            }
+        });
+    }
+
+    function sendRequest(resource, body, options) {
+        $.ajax({
+            method: options.Method,
+            url: baseUrl + resource,
+            headers: {
+                "Authorization": "Basic " + btoa(options.username + ":" + options.password)
+            },
+            data: body,
+            dataType: options.dataType,
+            type: options.method,
+            success: function (data) {
+
+                $("textarea#response").val(data);
+            },
+            fail: function (err) {
+                alert(err);
+            }
+        });
+    }
+
+    function fetchSeries(success) {
+        var series;
+        $.ajax({
+            method: 'POST',
+            url: baseUrl + "/search",
+            headers: {
+                "Authorization": "Basic " + btoa($('#username').val() + ":" + $('#password').val())
+            },
+            data: '<request version="1.0" xmlns="http://iddn.icis.com/ns/search"><scope><type>series</type></scope><constraints><or><domain>petchem</domain><domain>energy</domain></or></constraints><view><field>c:id</field><field>f:name</field></view></request>',
+            dataType: "xml",
+            type: "POST",
+            success: function (data) {
+                
+                var results = getJXONTree(data);
+                //series = results.feed.entry.map(function (x) { return { name: x.content['s:petchem-energy-series']['s:name'].keyValue, id: x.content['s:petchem-energy-series']['s:c_id'] } })
+                //success(series);
+                ////$("textarea#response").val(results);
+                var feed = results["atom:feed"];
+                dataToReturn = feed.map(function (x) {
+                    var content = x["atom:content"];
+                    var series_ids = content['domain'];
+                    //return {
+                    //    'series-order': price_range['s:c_series-order'],
+                    //    'assessment-low': price_range['s:assessment-low'].keyValue || price_range['s:assessment-low'], // different object in case of attribute
+                    //    'assessment-high': price_range['s:assessment-high'].keyValue || price_range['s:assessment-high'],
+                    //    'mid': price_range['s:mid'].keyValue || price_range['s:mid'],
+                    //    'start-date': price_range['s:start-date'],
+                    //    'end-date': price_range['s:end-date'],
+                    //    'period-label': price_range['s:period-label'].keyValue || price_range['s:period-label']
+                    //}
+                });
+                series = results.feed.entry.map(function (x) { return { name: x.content['s:petchem-energy-series']['s:name'].keyValue, id: x.content['s:petchem-energy-series']['s:c_id'] } })
+            },
+            fail: function (err) {
+                alert(err);
+            }
+        });
+    }
+
+    function fetchSeriesItems(seriesId, fromDate, toDate) {
+        var data;
+        var requestTemplate = '\
+<request version="1.0" xmlns="http://iddn.icis.com/ns/search">\
+    <scope>\
+        <series>{0}</series>\
+    </scope>\
+    <constraints>\
+        <and>\
+            <compare field="c:series-order" op="ge" value="{1}"/>\
+            <compare field="c:series-order" op="le" value="{2}"/>\
+        </and>\
+    </constraints>\
+    <view>\
+        <field>c:series-order</field>\
+        <field>*</field>\
+    </view>\
+</request>'
+
+        var request = requestTemplate.format(seriesId, fromDate, toDate);
+
+        $.ajax({
+            method: 'POST',
+            url: baseUrl + "/search",
+            headers: {
+                "Authorization": "Basic " + btoa($('#username').val() + ":" + $('#password').val())
+            },
+            data: request,
+            dataType: "xml",
+            type: "POST",
+            success: function (data) {
+                $("textarea#response").val(data);
+            },
+            fail: function (err) {
+                alert(err);
+            }
+        });
+    }
+
+    function populateSeries() {
+        fetchSeries(function (series) {
+            $.each(series, function (i, entry) {
+                $('#series').append($('<option>').text(entry.name).attr('value', entry.id));
+            });
+        });
+    }
+
+    function populateSeriesItems() {
+
+        var seriesId = $('#series').val()
+        var fromDate = $('#fromDate').val()
+        var toDate = $('#toDate').val()
+
+        fetchSeriesItems(seriesId, fromDate, toDate)
+    }
+
+    function letsgo() {
+
+        var params = {
+            seriesId: $('#series').val(),
+            fromDate: $('#fromDate').val(),
+            toDate: $('#toDate').val()
+        }
+
+        tableau.connectionName = "Series Items for " + series;
+        tableau.connectionData = JSON.stringify(params);
+        tableau.submit();
+    }
+
+    function getDescriptor(id, success) {
+        var accessor = getAccessor(id);
+
+        $.ajax({
+            method: 'GET',
+            url: baseUrl + accessor,
+            headers: {
+                "Authorization": "Basic " + btoa($('#username').val() + ":" + $('#password').val())
+            },
+            dataType: "xml",
+            type: "GET",
+            success: function (data) {
+                var descriptor = getJXONTree(data);
+                success(descriptor);
+            },
+            fail: function (err) {
+                alert(err);
+            }
+        });
+    }
+
+    function getAccessor(id) {
+        return id.replace("http://iddn.icis.com", "");
+    }
+
+    </script>
+</head>
+<body>
+
+    <div>
+        Username: <input id="username" type="text" value="daniel.leader@icis.com"/> &nbsp; 
+        Password: <input id="password" type="password" value=""/> &nbsp;
+        <input type="button" onclick="test()" value="Test"/>
+    </div>
+    <hr/>
+    <input type="button" onclick="populateSeries()" value="Fetch Series" />
+    <hr/>
+    <select id="series"></select><br />
+    From: <input type="text" id="fromDate" value="2015-01-01" />
+    To: <input type="text" id="toDate" value="2015-12-31" />
+    <input type="button" onclick="letsgo()" value="Let's go!"/>
+    <hr/>
+    <textarea id="response" style="width: 90%; height: 300px"></textarea>
+</body>
+</html>
